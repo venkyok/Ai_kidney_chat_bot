@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="te" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>కిడ్నీ డైట్ AI సహాయకుడు</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f8ff;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20%;
+        }
+        .bot-message {
+            background-color: #f5f5f5;
+            margin-right: 20%;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .quick-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .quick-button {
+            background-color: #e7f3ff;
+            border: 1px solid #4CAF50;
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 10px;
+        }
+        @media (max-width: 600px) {
+            .user-message, .bot-message {
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>కిడ్నీ డైట్ AI సహాయకుడు</h1>
+            <p>మీ ఆరోగ్యం కోసం మంచి ఆహార సలహాలు</p>
+        </div>
+
+        <div class="quick-buttons">
+            <button class="quick-button" onclick="askQuestion('మంచి ఆహారాలు ఏమిటి?')">మంచి ఆహారాలు</button>
+            <button class="quick-button" onclick="askQuestion('నివారించవలసిన ఆహారాలు ఏమిటి?')">నివారించవలసిన ఆహారాలు</button>
+            <button class="quick-button" onclick="askQuestion('రోజుకు ఎంత నీరు త్రాగాలి?')">నీటి సూచనలు</button>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message bot-message">
+                నమస్కారం! నేను మీ కిడ్నీ ఆహార సలహాదారుని. మీకు ఏమి సహాయం కావాలి?
+            </div>
+        </div>
+
+        <div class="input-container">
+            <input type="text" 
+                   id="userInput" 
+                   aria-label="Chat input"
+                   placeholder="ఇక్కడ మీ ప్రశ్న టైప్ చేయండి..." 
+                   onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()" aria-label="Send message">పంపండి</button>
+        </div>
+    </div>
+
+    <script>
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function askQuestion(question) {
+            document.getElementById('userInput').value = question;
+            sendMessage();
+        }
+
+        function addMessage(message, isUser) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.textContent = message;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addLoadingIndicator() {
+            const chatContainer = document.getElementById('chatContainer');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.id = 'loadingIndicator';
+            loadingDiv.textContent = 'సమాధానం రాస్తున్నాను...';
+            chatContainer.appendChild(loadingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function removeLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                addMessage(message, true);
+                input.value = '';
+                
+                addLoadingIndicator();
+                
+                try {
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: message })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('Response from server:', data); // Add this line to log the response
+                    
+                    if (!data || !data.response) {
+                        throw new Error('Invalid response format');
+                    }
+                    
+                    removeLoadingIndicator();
+                    addMessage(data.response, false);
+                } catch (error) {
+                    console.error('Error:', error);
+                    removeLoadingIndicator();
+                    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                        addMessage('సర్వర్‌తో కనెక్షన్ విఫలమైంది. దయచేసి మీ ఇంటర్నెట్ కనెక్షన్‌ని తనిఖీ చేయండి.', false);
+                    } else {
+                        addMessage('క్షమించండి, ఏదో తప్పు జరిగింది. దయచేసి తర్వాత ప్రయత్నించండి.', false);
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
